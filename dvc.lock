@@ -1,0 +1,42 @@
+schema: '2.0'
+stages:
+  download_example:
+    cmd: uv run python pipeline/01_download_example.py
+    deps:
+    - path: pipeline/01_download_example.py
+      hash: md5
+      md5: abb98cefce9854c95a7d5c43e5c58dec
+      size: 1009
+    outs:
+    - path: data/downloads/example_data.parquet
+      hash: md5
+      md5: 018f2298ceca482c45be800de9bb0c10
+      size: 165268
+  process_example:
+    cmd: MPLBACKEND=Agg uv run jupytext --to notebook --execute --set-kernel 
+      python3 --output book/notebooks/02_analyse_example.ipynb 
+      pipeline/02_analyse_example.py && uv run python 
+      pipeline/_strip_jupytext_metadata.py 
+      book/notebooks/02_analyse_example.ipynb
+    deps:
+    - path: data/downloads/example_data.parquet
+      hash: md5
+      md5: 018f2298ceca482c45be800de9bb0c10
+      size: 165268
+    - path: pipeline/02_analyse_example.py
+      hash: md5
+      md5: 8b071b168966d61106405966c237287f
+      size: 2006
+    outs:
+    - path: book/notebooks/02_analyse_example.ipynb
+      hash: md5
+      md5: 306e98a7ef1881f3cc366051df505b7f
+      size: 4819
+    - path: output/images/02_category_dist.png
+      hash: md5
+      md5: 386d9a8a19f9aa84d3c71cae5149c25b
+      size: 40443
+    - path: output/images/02_daily_average.png
+      hash: md5
+      md5: 8e7046ced1ffd391bdfced90bf04fd34
+      size: 179776

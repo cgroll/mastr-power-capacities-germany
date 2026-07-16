@@ -1,0 +1,27 @@
+stages:
+  download_example:
+    cmd: uv run python pipeline/01_download_example.py
+    deps:
+      - pipeline/01_download_example.py
+    outs:
+      - data/downloads/example_data.parquet:
+          persist: true
+
+  process_example:
+    cmd: >-
+      MPLBACKEND=Agg uv run jupytext --to notebook --execute
+      --set-kernel python3
+      --output book/notebooks/02_analyse_example.ipynb
+      pipeline/02_analyse_example.py &&
+      uv run python pipeline/_strip_jupytext_metadata.py
+      book/notebooks/02_analyse_example.ipynb
+    deps:
+      - pipeline/02_analyse_example.py
+      - data/downloads/example_data.parquet
+    outs:
+      - book/notebooks/02_analyse_example.ipynb:
+          cache: false
+      - output/images/02_daily_average.png:
+          cache: false
+      - output/images/02_category_dist.png:
+          cache: false
