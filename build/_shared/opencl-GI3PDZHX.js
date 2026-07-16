@@ -1,0 +1,1 @@
+import{a}from"/mastr-power-capacities-germany/build/_shared/chunk-RX3YIEIM.js";import"/mastr-power-capacities-germany/build/_shared/chunk-CBDDV5MN.js";import"/mastr-power-capacities-germany/build/_shared/chunk-OZE3FFNP.js";export default a();
