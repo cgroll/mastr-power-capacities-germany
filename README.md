@@ -1,4 +1,4 @@
-# Project Book Template
+# Mastr Power Capacities Germany
 
 A template for research projects that publish a [MyST](https://mystmd.org/) Jupyter Book
 to GitHub Pages. The data pipeline is managed by [DVC](https://dvc.org/);
