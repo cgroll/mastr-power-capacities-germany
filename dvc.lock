@@ -18,13 +18,13 @@ stages:
     deps:
     - path: pipeline/02_download_nuts.py
       hash: md5
-      md5: 494abeef724b4d1270e659795b1b6a99
-      size: 2767
+      md5: 081024f4241d9073835fda20777b129d
+      size: 2987
     outs:
     - path: data/downloads/country_borders.geojson
       hash: md5
-      md5: 9b918f56dc95077be3d5421fe9f0735a
-      size: 1738964
+      md5: dd213118020e9d2604bf9f29b540bfa5
+      size: 1758506
     - path: data/downloads/lau_nuts_correspondence.parquet
       hash: md5
       md5: 5c0225a0c5f9faf4a41e2878e5adaf53
@@ -47,9 +47,13 @@ stages:
       nfiles: 6
     - path: pipeline/03_build_capacity_panel.py
       hash: md5
-      md5: 58cad41d55f06a984a23c0454e37ba5d
-      size: 18483
+      md5: 5744df969aca19a654bc41f1e1ce8c65
+      size: 19753
     outs:
+    - path: data/processed/capacity_by_nuts2_month.parquet
+      hash: md5
+      md5: dd1d6f1b803629ed59f3b944ccd7e589
+      size: 330102
     - path: data/processed/capacity_by_offshore_month.parquet
       hash: md5
       md5: b6aea9a7c36065dc1624603074adf573
@@ -81,8 +85,8 @@ stages:
     deps:
     - path: data/downloads/country_borders.geojson
       hash: md5
-      md5: 9b918f56dc95077be3d5421fe9f0735a
-      size: 1738964
+      md5: dd213118020e9d2604bf9f29b540bfa5
+      size: 1758506
     - path: data/downloads/nuts_regions.geojson
       hash: md5
       md5: deef50e6af7cf70882303055901eae9c
@@ -110,7 +114,7 @@ stages:
     outs:
     - path: book/notebooks/04_eda.ipynb
       hash: md5
-      md5: c9aa6926e8dd5394076c0cee69885239
+      md5: 7d58e5e03c0e61f7970b59f9e4e25d09
       size: 39865
     - path: output/images/04_capacity_map_animation.gif
       hash: md5
@@ -156,3 +160,35 @@ stages:
       hash: md5
       md5: 1ed1b1ebb1ebdfb1aee301fd1bebf7a5
       size: 43746
+  process_region_granularity:
+    cmd: MPLBACKEND=Agg uv run jupytext --to notebook --execute --set-kernel 
+      python3 --output book/notebooks/05_region_granularity.ipynb 
+      pipeline/05_region_granularity.py && uv run python 
+      pipeline/_strip_jupytext_metadata.py 
+      book/notebooks/05_region_granularity.ipynb
+    deps:
+    - path: data/downloads/country_borders.geojson
+      hash: md5
+      md5: dd213118020e9d2604bf9f29b540bfa5
+      size: 1758506
+    - path: data/downloads/nuts_regions.geojson
+      hash: md5
+      md5: deef50e6af7cf70882303055901eae9c
+      size: 7149154
+    - path: pipeline/05_region_granularity.py
+      hash: md5
+      md5: 47c2cb2d66672639f4ea951159828be1
+      size: 3300
+    outs:
+    - path: book/notebooks/05_region_granularity.ipynb
+      hash: md5
+      md5: 51513a6e7dac76cb71639a652c20562e
+      size: 6500
+    - path: output/images/05_nuts2_regions_map.png
+      hash: md5
+      md5: 84fba3b6963f66133aa9f176bd1d9601
+      size: 230701
+    - path: output/images/05_nuts3_regions_map.png
+      hash: md5
+      md5: 89a02e177d24a4ce28018e99ca90558a
+      size: 422693

@@ -155,6 +155,17 @@ class ProjPaths:
         return self.processed_data_path / "capacity_by_region_month.parquet"
 
     @property
+    def capacity_by_nuts2_month_file(self) -> Path:
+        """Monthly (end-of-month) export, by NUTS2 region x series x month, from 2015 on.
+
+        Same columns and `series` values as `capacity_by_region_month_file`
+        (excluding `storage`, which has no NUTS2 breakdown), aggregated up from
+        NUTS3 to NUTS2 by truncating the NUTS3 code to its first 4 characters.
+        See `pipeline/03_build_capacity_panel.py`.
+        """
+        return self.processed_data_path / "capacity_by_nuts2_month.parquet"
+
+    @property
     def capacity_by_offshore_month_file(self) -> Path:
         """Monthly (end-of-month) export for offshore wind, by the two offshore
         pseudo-regions (DEZZ-NORDSEE / DEZZ-OSTSEE) x month, from 2015 on.

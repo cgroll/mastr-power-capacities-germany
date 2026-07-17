@@ -11,7 +11,10 @@ Two Eurostat/GISCO sources, both public and unauthenticated:
 
 Also keeps country-level (LEVL_CODE 0) outlines for Germany's North/Baltic Sea
 neighbors, for map context around the offshore wind areas (which sit in
-international/German waters between these countries, outside any NUTS region).
+international/German waters between these countries, outside any NUTS region);
+and for Luxembourg, whose outline unioned with Germany's gives the DE-LU day-ahead
+electricity bidding zone boundary (Luxembourg has no TSO of its own and has been
+merged into Germany's bidding zone since October 2018).
 """
 
 import geopandas as gpd
@@ -30,7 +33,7 @@ LAU_NUTS_URL = (
     "https://ec.europa.eu/eurostat/documents/345175/501971/"
     "EU-27-LAU-2024-NUTS-2024.xlsx"
 )
-NEIGHBOR_COUNTRIES = ["DE", "NL", "BE", "DK", "PL", "SE"]
+NEIGHBOR_COUNTRIES = ["DE", "NL", "BE", "DK", "PL", "SE", "LU"]
 
 nuts = gpd.read_file(NUTS_URL)
 
@@ -41,7 +44,7 @@ nuts_de = nuts[nuts["CNTR_CODE"] == "DE"][
 nuts_de.to_file(paths.nuts_regions_file, driver="GeoJSON")
 print(f"Saved {len(nuts_de):,} NUTS regions (levels 0-3) -> {paths.nuts_regions_file}")
 
-# ── Country outlines for map context around the North/Baltic Sea ─────────────
+# ── Country outlines: North/Baltic Sea context + DE-LU bidding zone ──────────
 country_borders = nuts[(nuts["LEVL_CODE"] == 0) & (nuts["CNTR_CODE"].isin(NEIGHBOR_COUNTRIES))][
     ["CNTR_CODE", "NAME_LATN", "geometry"]
 ].reset_index(drop=True)

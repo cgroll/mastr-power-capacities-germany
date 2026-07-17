@@ -15,6 +15,7 @@ project:
     - title: Analysis
       children:
         - file: notebooks/04_eda.ipynb
+        - file: notebooks/05_region_granularity.ipynb
 site:
   options:
     folders: true

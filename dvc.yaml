@@ -30,6 +30,7 @@ stages:
       - data/processed/capacity_by_region_year.parquet
       - data/processed/capacity_by_region_year_pv_category.parquet
       - data/processed/capacity_by_region_month.parquet
+      - data/processed/capacity_by_nuts2_month.parquet
       - data/processed/capacity_by_offshore_month.parquet
       - data/processed/offshore_regions.geojson
 
@@ -73,4 +74,24 @@ stages:
       - output/images/04_pv_category_installation_type.png:
           cache: false
       - output/images/04_offshore_regions_map.png:
+          cache: false
+
+  process_region_granularity:
+    cmd: >-
+      MPLBACKEND=Agg uv run jupytext --to notebook --execute
+      --set-kernel python3
+      --output book/notebooks/05_region_granularity.ipynb
+      pipeline/05_region_granularity.py &&
+      uv run python pipeline/_strip_jupytext_metadata.py
+      book/notebooks/05_region_granularity.ipynb
+    deps:
+      - pipeline/05_region_granularity.py
+      - data/downloads/nuts_regions.geojson
+      - data/downloads/country_borders.geojson
+    outs:
+      - book/notebooks/05_region_granularity.ipynb:
+          cache: false
+      - output/images/05_nuts3_regions_map.png:
+          cache: false
+      - output/images/05_nuts2_regions_map.png:
           cache: false

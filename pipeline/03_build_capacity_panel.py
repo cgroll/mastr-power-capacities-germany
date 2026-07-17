@@ -14,6 +14,8 @@ Outputs:
 - `capacity_by_region_month_file` / `capacity_by_offshore_month_file`: monthly
   (end-of-month) exports from 2015 on, for combining with weather data at
   region/month granularity — see "Monthly export" below.
+- `capacity_by_nuts2_month_file`: the solar + onshore-wind slice of
+  `capacity_by_region_month_file`, aggregated up from NUTS3 to NUTS2.
 - `offshore_regions_file`: offshore wind footprint polygons (see "Offshore
   region polygons" below).
 
@@ -60,6 +62,9 @@ the location join.
 sub-types), storage, and onshore wind, by NUTS3 region; `capacity_by_offshore_month_file`
 covers offshore wind by its two pseudo-regions. Both start 2015-01 (fixed;
 independent of when the data itself starts) and run to the current month.
+`capacity_by_nuts2_month_file` is the same solar + onshore-wind series (storage
+excluded), summed from NUTS3 up to NUTS2 (the first 4 characters of the NUTS3
+code) — same columns, coarser region.
 
 Monthly snapshots use the same "installed as of the end of the period" rule
 as the annual panel, but computed differently: looping over ~300 months and
@@ -162,6 +167,16 @@ def monthly_snapshot_panel(df: pd.DataFrame, group_cols: list[str], month_range:
     return panel.reset_index(drop=True)
 
 
+def aggregate_to_nuts2(monthly: pd.DataFrame) -> pd.DataFrame:
+    """Sum a NUTS3 region/series/month panel up to NUTS2 (first 4 chars of the NUTS3 code)."""
+    nuts2 = monthly.copy()
+    nuts2["region_code"] = nuts2["region_code"].str[:4]
+    return (
+        nuts2.groupby(["region_code", "series", "month"], as_index=False)[["capacity_mw", "unit_count"]]
+        .sum()
+    )
+
+
 correspondence = pd.read_parquet(paths.lau_nuts_correspondence_file)
 tech_files = sorted(paths.mastr_units_raw_path.glob("*.parquet"))
 
@@ -196,6 +211,7 @@ partial_panels = []
 partial_pv_panels = []
 partial_region_month_panels = []
 partial_offshore_month_panels = []
+partial_nuts2_month_panels = []
 offshore_region_rows = []
 total_rows = 0
 total_events = 0
@@ -318,7 +334,9 @@ for f in tech_files:
     if f.stem == "solar":
         monthly = monthly_snapshot_panel(events, ["region_code", "pv_category"], MONTH_RANGE)
         monthly["series"] = "solar_" + monthly["pv_category"].astype(str)
-        partial_region_month_panels.append(monthly.drop(columns=["pv_category"]))
+        solar_monthly = monthly.drop(columns=["pv_category"])
+        partial_region_month_panels.append(solar_monthly)
+        partial_nuts2_month_panels.append(aggregate_to_nuts2(solar_monthly))
 
     elif f.stem == "storage":
         monthly = monthly_snapshot_panel(events, ["region_code"], MONTH_RANGE)
@@ -332,6 +350,7 @@ for f in tech_files:
         onshore_monthly["series"] = "wind_onshore"
         partial_region_month_panels.append(onshore_monthly)
         partial_offshore_month_panels.append(monthly[is_offshore_row].copy())
+        partial_nuts2_month_panels.append(aggregate_to_nuts2(onshore_monthly))
 
         # ── Offshore region polygons (built once, here — see module docstring) ─
         today = pd.Timestamp.today()
@@ -383,6 +402,13 @@ capacity_by_region_month.to_parquet(paths.capacity_by_region_month_file, index=F
 print(
     f"Saved monthly region export: {len(capacity_by_region_month):,} rows, "
     f"from {EXPORT_START_PERIOD} -> {paths.capacity_by_region_month_file}"
+)
+
+capacity_by_nuts2_month = pd.concat(partial_nuts2_month_panels, ignore_index=True)
+capacity_by_nuts2_month.to_parquet(paths.capacity_by_nuts2_month_file, index=False)
+print(
+    f"Saved monthly NUTS2 export: {len(capacity_by_nuts2_month):,} rows, "
+    f"from {EXPORT_START_PERIOD} -> {paths.capacity_by_nuts2_month_file}"
 )
 
 capacity_by_offshore_month = pd.concat(partial_offshore_month_panels, ignore_index=True)
