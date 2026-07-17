@@ -1,89 +1,56 @@
 # Mastr Power Capacities Germany
 
-A template for research projects that publish a [MyST](https://mystmd.org/) Jupyter Book
-to GitHub Pages. The data pipeline is managed by [DVC](https://dvc.org/);
-dependencies are managed by [uv](https://docs.astral.sh/uv/).
+Installed electricity generation and storage capacity in Germany, based on the
+[Marktstammdatenregister (MaStR)](https://www.marktstammdatenregister.de/MaStR)
+— the German Federal Network Agency's public register of every power/gas unit
+in the country. The book publishes an EDA on how installed capacity is
+distributed across German NUTS3 regions and how it has changed over time.
 
-## Starting a new project from this template
+The data pipeline is managed by [DVC](https://dvc.org/); dependencies are
+managed by [uv](https://docs.astral.sh/uv/); the book is built with
+[MyST](https://mystmd.org/) and published to GitHub Pages.
 
-### Pick your names up front
+## Data
 
-You need two names:
+- **MaStR units** (wind, solar, biomass, hydro, gsgk, storage) via the
+  [open-mastr](https://github.com/OpenEnergyPlatform/open-MaStR) package,
+  which downloads the official bulk XML dump and applies its own
+  decoding/cleansing.
+- **NUTS region geometries** and the **LAU→NUTS3 crosswalk** from
+  Eurostat/GISCO, used to map each unit's municipality to a NUTS3 region.
+  Offshore wind units (no municipality) are assigned to two synthetic
+  pseudo-regions by grid cluster (North Sea / Baltic Sea) instead.
+- Historic snapshots use **fixed, current NUTS3 boundaries** — only the
+  installed-capacity numbers vary by year, not the region geometry.
 
-| What | Example | Rule |
-|------|---------|------|
-| **Repository / folder name** | `financial-market-returns` | Chosen on GitHub when you create the repo — becomes the local folder name after cloning |
-| **Python package abbreviation** | `fmr` | Short acronym you pick yourself; used in every `import` statement |
-
-The abbreviation is the equivalent of `woe` in `world-of-energy`. It must be a
-valid Python identifier (letters, digits, underscores) — shorter is better.
-
-### 1. Create the repository on GitHub
-
-Click **Use this template → Create a new repository** at the top of this page.
-Name it (e.g. `financial-market-returns`) and click **Create repository**.
-
-### 2. Clone and initialize
-
-```bash
-git clone https://github.com/your-username/financial-market-returns.git
-cd financial-market-returns
-python init_project.py
-```
-
-The script reads the project name from the git remote automatically and asks
-only for the package abbreviation. It renames `pkg/`, updates all references
-in `pyproject.toml` and the pipeline scripts, commits the result, and removes
-itself.
-
-### 3. Set up the environment
+## Running the pipeline
 
 ```bash
-# Install uv if you haven't already — https://docs.astral.sh/uv/
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
 uv sync
-```
-
-### 4. Verify the example pipeline
-
-```bash
 make dry-run   # preview what would run
-make run       # execute the example pipeline
+make run       # execute the full pipeline (downloads ~GBs of data on first run)
 make serve     # open http://localhost:3000 — live book preview
 ```
-
-Once everything works, remove the example files and start your own pipeline:
-
-```bash
-rm pipeline/01_download_example.py pipeline/02_analyse_example.py
-# Remove the example stage from dvc.yaml and the notebook entry from book/myst.yml
-```
-
-### 5. Enable GitHub Pages
-
-In your repository: **Settings → Pages → Source → GitHub Actions**.
-
-Every push to `main` will build and deploy the book automatically.
-Pull requests run only the build check.
 
 ## Project layout
 
 ```
 project-root/
-├── <abbrev>/            # Python package — renamed by init_project.py
-│   └── paths.py         # Centralized path config
-├── pipeline/            # Pipeline scripts
-│   ├── 01_download_*    # Data acquisition
-│   └── 02_analyse_*     # Analysis → notebook
-├── book/                # MyST book source
-│   ├── notebooks/       # Executed notebooks (Snakemake output)
-│   ├── markdown/        # Static content
-│   └── myst.yml         # TOC and site settings
-├── data/                # Git-ignored data (cached by DVC)
-├── output/images/       # Figures (tracked in git)
-├── dvc.yaml             # Pipeline DAG
-├── dvc.lock             # Pipeline state (checksums) — tracked in git
+├── mpg/                  # Python package
+│   └── paths.py          # Centralized path config
+├── pipeline/
+│   ├── 01_download_mastr.py         # MaStR bulk download -> consolidated parquet
+│   ├── 02_download_nuts.py          # NUTS geometries + LAU-NUTS crosswalk
+│   ├── 03_build_capacity_panel.py   # Region assignment + annual capacity panel
+│   └── 04_eda.py                    # EDA -> notebook
+├── book/                 # MyST book source
+│   ├── notebooks/         # Executed notebooks (DVC output)
+│   ├── markdown/          # Static content
+│   └── myst.yml           # TOC and site settings
+├── data/                  # Git-ignored data (cached by DVC)
+├── output/images/         # Figures (tracked in git)
+├── dvc.yaml               # Pipeline DAG
+├── dvc.lock               # Pipeline state (checksums) — tracked in git
 └── contribution_conventions.md   # Detailed conventions for contributors/AI
 ```
 

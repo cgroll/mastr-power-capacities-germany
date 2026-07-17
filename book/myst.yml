@@ -2,7 +2,7 @@ version: 1
 project:
   title: Mastr Power Capacities Germany
   authors:
-    - name: Your Name
+    - name: cgroll
   copyright: '2026'
   exclude:
     - _build
@@ -14,7 +14,7 @@ project:
     - file: markdown/index.md
     - title: Analysis
       children:
-        - file: notebooks/02_analyse_example.ipynb
+        - file: notebooks/04_eda.ipynb
 site:
   options:
     folders: true

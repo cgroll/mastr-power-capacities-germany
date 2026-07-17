@@ -1,27 +1,76 @@
 stages:
-  download_example:
-    cmd: uv run python pipeline/01_download_example.py
+  download_mastr:
+    cmd: uv run python pipeline/01_download_mastr.py
     deps:
-      - pipeline/01_download_example.py
+      - pipeline/01_download_mastr.py
     outs:
-      - data/downloads/example_data.parquet:
+      - data/downloads/mastr_units_raw:
           persist: true
 
-  process_example:
+  download_nuts:
+    cmd: uv run python pipeline/02_download_nuts.py
+    deps:
+      - pipeline/02_download_nuts.py
+    outs:
+      - data/downloads/nuts_regions.geojson:
+          persist: true
+      - data/downloads/lau_nuts_correspondence.parquet:
+          persist: true
+      - data/downloads/country_borders.geojson:
+          persist: true
+
+  build_capacity_panel:
+    cmd: uv run python pipeline/03_build_capacity_panel.py
+    deps:
+      - pipeline/03_build_capacity_panel.py
+      - data/downloads/mastr_units_raw
+      - data/downloads/lau_nuts_correspondence.parquet
+    outs:
+      - data/processed/capacity_events.parquet
+      - data/processed/capacity_by_region_year.parquet
+      - data/processed/capacity_by_region_year_pv_category.parquet
+      - data/processed/capacity_by_region_month.parquet
+      - data/processed/capacity_by_offshore_month.parquet
+      - data/processed/offshore_regions.geojson
+
+  process_eda:
     cmd: >-
       MPLBACKEND=Agg uv run jupytext --to notebook --execute
       --set-kernel python3
-      --output book/notebooks/02_analyse_example.ipynb
-      pipeline/02_analyse_example.py &&
+      --output book/notebooks/04_eda.ipynb
+      pipeline/04_eda.py &&
       uv run python pipeline/_strip_jupytext_metadata.py
-      book/notebooks/02_analyse_example.ipynb
+      book/notebooks/04_eda.ipynb
     deps:
-      - pipeline/02_analyse_example.py
-      - data/downloads/example_data.parquet
+      - pipeline/04_eda.py
+      - data/processed/capacity_events.parquet
+      - data/processed/capacity_by_region_year.parquet
+      - data/processed/capacity_by_region_year_pv_category.parquet
+      - data/downloads/nuts_regions.geojson
+      - data/downloads/country_borders.geojson
+      - data/processed/offshore_regions.geojson
     outs:
-      - book/notebooks/02_analyse_example.ipynb:
+      - book/notebooks/04_eda.ipynb:
           cache: false
-      - output/images/02_daily_average.png:
+      - output/images/04_solar_wind_capacity_over_time.png:
           cache: false
-      - output/images/02_category_dist.png:
+      - output/images/04_storage_capacity_over_time.png:
+          cache: false
+      - output/images/04_capacity_map_solar.png:
+          cache: false
+      - output/images/04_capacity_map_wind.png:
+          cache: false
+      - output/images/04_capacity_map_animation.gif:
+          cache: false
+      - output/images/04_pv_category_over_time.png:
+          cache: false
+      - output/images/04_pv_category_by_state.png:
+          cache: false
+      - output/images/04_pv_category_size_distribution.png:
+          cache: false
+      - output/images/04_pv_category_usage_sector.png:
+          cache: false
+      - output/images/04_pv_category_installation_type.png:
+          cache: false
+      - output/images/04_offshore_regions_map.png:
           cache: false

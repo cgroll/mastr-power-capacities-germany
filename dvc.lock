@@ -1,42 +1,158 @@
 schema: '2.0'
 stages:
-  download_example:
-    cmd: uv run python pipeline/01_download_example.py
+  download_mastr:
+    cmd: uv run python pipeline/01_download_mastr.py
     deps:
-    - path: pipeline/01_download_example.py
+    - path: pipeline/01_download_mastr.py
       hash: md5
-      md5: abb98cefce9854c95a7d5c43e5c58dec
-      size: 1009
+      md5: 42f6432ab84a1a6c8dd8abcb8aefbc96
+      size: 8697
     outs:
-    - path: data/downloads/example_data.parquet
+    - path: data/downloads/mastr_units_raw
       hash: md5
-      md5: 018f2298ceca482c45be800de9bb0c10
-      size: 165268
-  process_example:
+      md5: 725f3d3f7429b80893b827f127ecd0ab.dir
+      size: 311369350
+      nfiles: 6
+  download_nuts:
+    cmd: uv run python pipeline/02_download_nuts.py
+    deps:
+    - path: pipeline/02_download_nuts.py
+      hash: md5
+      md5: 494abeef724b4d1270e659795b1b6a99
+      size: 2767
+    outs:
+    - path: data/downloads/country_borders.geojson
+      hash: md5
+      md5: 9b918f56dc95077be3d5421fe9f0735a
+      size: 1738964
+    - path: data/downloads/lau_nuts_correspondence.parquet
+      hash: md5
+      md5: 5c0225a0c5f9faf4a41e2878e5adaf53
+      size: 66832
+    - path: data/downloads/nuts_regions.geojson
+      hash: md5
+      md5: deef50e6af7cf70882303055901eae9c
+      size: 7149154
+  build_capacity_panel:
+    cmd: uv run python pipeline/03_build_capacity_panel.py
+    deps:
+    - path: data/downloads/lau_nuts_correspondence.parquet
+      hash: md5
+      md5: 5c0225a0c5f9faf4a41e2878e5adaf53
+      size: 66832
+    - path: data/downloads/mastr_units_raw
+      hash: md5
+      md5: 725f3d3f7429b80893b827f127ecd0ab.dir
+      size: 311369350
+      nfiles: 6
+    - path: pipeline/03_build_capacity_panel.py
+      hash: md5
+      md5: 58cad41d55f06a984a23c0454e37ba5d
+      size: 18483
+    outs:
+    - path: data/processed/capacity_by_offshore_month.parquet
+      hash: md5
+      md5: b6aea9a7c36065dc1624603074adf573
+      size: 5615
+    - path: data/processed/capacity_by_region_month.parquet
+      hash: md5
+      md5: a43ce6293353966e73b5071e87aeda62
+      size: 2584090
+    - path: data/processed/capacity_by_region_year.parquet
+      hash: md5
+      md5: f742a5cfeb1c1a66a51bddade3653fe1
+      size: 588675
+    - path: data/processed/capacity_by_region_year_pv_category.parquet
+      hash: md5
+      md5: 73296b08c3718e079c5e1690e80c5206
+      size: 546842
+    - path: data/processed/capacity_events.parquet
+      hash: md5
+      md5: 9fc58d08e674dbb80b45d8c10f5ab374
+      size: 147620575
+    - path: data/processed/offshore_regions.geojson
+      hash: md5
+      md5: 0bae64cc6eae340ba323c5ba83137532
+      size: 1594
+  process_eda:
     cmd: MPLBACKEND=Agg uv run jupytext --to notebook --execute --set-kernel 
-      python3 --output book/notebooks/02_analyse_example.ipynb 
-      pipeline/02_analyse_example.py && uv run python 
-      pipeline/_strip_jupytext_metadata.py 
-      book/notebooks/02_analyse_example.ipynb
+      python3 --output book/notebooks/04_eda.ipynb pipeline/04_eda.py && uv run 
+      python pipeline/_strip_jupytext_metadata.py book/notebooks/04_eda.ipynb
     deps:
-    - path: data/downloads/example_data.parquet
+    - path: data/downloads/country_borders.geojson
       hash: md5
-      md5: 018f2298ceca482c45be800de9bb0c10
-      size: 165268
-    - path: pipeline/02_analyse_example.py
+      md5: 9b918f56dc95077be3d5421fe9f0735a
+      size: 1738964
+    - path: data/downloads/nuts_regions.geojson
       hash: md5
-      md5: 8b071b168966d61106405966c237287f
-      size: 2006
+      md5: deef50e6af7cf70882303055901eae9c
+      size: 7149154
+    - path: data/processed/capacity_by_region_year.parquet
+      hash: md5
+      md5: f742a5cfeb1c1a66a51bddade3653fe1
+      size: 588675
+    - path: data/processed/capacity_by_region_year_pv_category.parquet
+      hash: md5
+      md5: 73296b08c3718e079c5e1690e80c5206
+      size: 546842
+    - path: data/processed/capacity_events.parquet
+      hash: md5
+      md5: 9fc58d08e674dbb80b45d8c10f5ab374
+      size: 147620575
+    - path: data/processed/offshore_regions.geojson
+      hash: md5
+      md5: 0bae64cc6eae340ba323c5ba83137532
+      size: 1594
+    - path: pipeline/04_eda.py
+      hash: md5
+      md5: c6e7811e87c400bccab82890e1908186
+      size: 22057
     outs:
-    - path: book/notebooks/02_analyse_example.ipynb
+    - path: book/notebooks/04_eda.ipynb
       hash: md5
-      md5: 306e98a7ef1881f3cc366051df505b7f
-      size: 4819
-    - path: output/images/02_category_dist.png
+      md5: c9aa6926e8dd5394076c0cee69885239
+      size: 39865
+    - path: output/images/04_capacity_map_animation.gif
       hash: md5
-      md5: 386d9a8a19f9aa84d3c71cae5149c25b
-      size: 40443
-    - path: output/images/02_daily_average.png
+      md5: d6ea875774ebeb0dc8f95441e579ccfd
+      size: 2259670
+    - path: output/images/04_capacity_map_solar.png
       hash: md5
-      md5: 8e7046ced1ffd391bdfced90bf04fd34
-      size: 179776
+      md5: c93a2d04dc998ff9f0198edd4cb14959
+      size: 341532
+    - path: output/images/04_capacity_map_wind.png
+      hash: md5
+      md5: a45bdc50cd620d9fafc540b01e86c9e5
+      size: 201689
+    - path: output/images/04_offshore_regions_map.png
+      hash: md5
+      md5: a5c4b156aeac2ea60fa94288cb49f579
+      size: 285411
+    - path: output/images/04_pv_category_by_state.png
+      hash: md5
+      md5: 25179e7ed95f2613320c53d3ad6b665a
+      size: 82455
+    - path: output/images/04_pv_category_installation_type.png
+      hash: md5
+      md5: 25656700749c8a5f360c5fc4f61e71e5
+      size: 46862
+    - path: output/images/04_pv_category_over_time.png
+      hash: md5
+      md5: 3340ae757a59d9d983ecb20cd7b43a46
+      size: 69856
+    - path: output/images/04_pv_category_size_distribution.png
+      hash: md5
+      md5: 094385f416f11d41227d3a382b80c3ce
+      size: 37950
+    - path: output/images/04_pv_category_usage_sector.png
+      hash: md5
+      md5: 4386eb9f09d58478f50aad3fd3fbce20
+      size: 46989
+    - path: output/images/04_solar_wind_capacity_over_time.png
+      hash: md5
+      md5: 54371d6c7c647526465fb250468979ab
+      size: 57892
+    - path: output/images/04_storage_capacity_over_time.png
+      hash: md5
+      md5: 1ed1b1ebb1ebdfb1aee301fd1bebf7a5
+      size: 43746

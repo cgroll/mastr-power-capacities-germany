@@ -12,11 +12,17 @@ dependencies = [
     "mystmd>=1.8.0",
     "nbconvert>=7.17.1",
     "nbformat>=5.10.0",
-    # add your project-specific analysis packages below, e.g.:
+    # project-specific analysis packages
     "matplotlib>=3.9.0",
     "numpy>=1.26.0",
     "pandas>=2.2.0",
     "pyarrow>=17.0.0",
+    "open-mastr>=0.17.1",
+    "geopandas>=1.0.0",
+    "openpyxl>=3.1.0",
+    "requests>=2.32.0",
+    "pillow>=10.0.0",
+    "shapely>=2.0.0",
 ]
 
 [build-system]

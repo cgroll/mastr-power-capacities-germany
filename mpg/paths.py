@@ -77,18 +77,99 @@ class ProjPaths:
         return self.output_path / "reports"
 
     # ------------------------------------------------------------------ #
-    # Example data files — replace with project-specific paths            #
+    # MaStR data files                                                     #
     # ------------------------------------------------------------------ #
 
     @property
-    def example_raw_file(self) -> Path:
-        """Raw example dataset (parquet)."""
-        return self.downloads_path / "example_data.parquet"
+    def mastr_home_path(self) -> Path:
+        """open-mastr's own working directory (SQLite DB, XML/doc cache)."""
+        return self.downloads_path / "mastr_home"
 
     @property
-    def example_processed_file(self) -> Path:
-        """Processed example dataset (parquet)."""
-        return self.processed_data_path / "example_processed.parquet"
+    def mastr_units_raw_path(self) -> Path:
+        """Raw MaStR units, one parquet file per technology (one row per unit).
+
+        Kept as a directory of per-technology files rather than a single
+        consolidated file: solar alone is several million rows, and writing
+        (and later re-reading) one combined file repeatedly forced the whole
+        dataset into memory at once, which OOM'd on this machine. Processing
+        one technology's file at a time keeps peak memory bounded.
+        """
+        return self.downloads_path / "mastr_units_raw"
+
+    # ------------------------------------------------------------------ #
+    # NUTS region data files                                               #
+    # ------------------------------------------------------------------ #
+
+    @property
+    def nuts_regions_file(self) -> Path:
+        """Germany NUTS region geometries (all levels), from GISCO."""
+        return self.downloads_path / "nuts_regions.geojson"
+
+    @property
+    def lau_nuts_correspondence_file(self) -> Path:
+        """German municipality (AGS/LAU) -> NUTS3 code crosswalk, from Eurostat."""
+        return self.downloads_path / "lau_nuts_correspondence.parquet"
+
+    @property
+    def country_borders_file(self) -> Path:
+        """Country-level (LEVL_CODE 0) outlines for Germany + North/Baltic Sea neighbors.
+
+        Used for map context around offshore wind areas, which sit outside
+        any NUTS region. See `pipeline/02_download_nuts.py`.
+        """
+        return self.downloads_path / "country_borders.geojson"
+
+    # ------------------------------------------------------------------ #
+    # Processed data files                                                 #
+    # ------------------------------------------------------------------ #
+
+    @property
+    def capacity_events_file(self) -> Path:
+        """Unit-level capacity data with region assigned."""
+        return self.processed_data_path / "capacity_events.parquet"
+
+    @property
+    def capacity_by_region_year_file(self) -> Path:
+        """Annual installed-capacity snapshot panel, by region x technology x year."""
+        return self.processed_data_path / "capacity_by_region_year.parquet"
+
+    @property
+    def capacity_by_region_year_pv_category_file(self) -> Path:
+        """Annual solar-only panel split by behind-the-meter category (region x category x year).
+
+        Category is one of: full_feed_in, self_consumption_with_storage,
+        self_consumption_no_storage, unknown. See `pipeline/03_build_capacity_panel.py`.
+        """
+        return self.processed_data_path / "capacity_by_region_year_pv_category.parquet"
+
+    @property
+    def capacity_by_region_month_file(self) -> Path:
+        """Monthly (end-of-month) export, by NUTS3 region x series x month, from 2015 on.
+
+        `series` is one of: solar_full_feed_in, solar_self_consumption_no_storage,
+        solar_self_consumption_with_storage, solar_unknown, storage, wind_onshore.
+        For joining against weather data at region/month granularity. See
+        `pipeline/03_build_capacity_panel.py`.
+        """
+        return self.processed_data_path / "capacity_by_region_month.parquet"
+
+    @property
+    def capacity_by_offshore_month_file(self) -> Path:
+        """Monthly (end-of-month) export for offshore wind, by the two offshore
+        pseudo-regions (DEZZ-NORDSEE / DEZZ-OSTSEE) x month, from 2015 on.
+        """
+        return self.processed_data_path / "capacity_by_offshore_month.parquet"
+
+    @property
+    def offshore_regions_file(self) -> Path:
+        """Offshore wind footprint polygons (North Sea / Baltic Sea), as GeoJSON.
+
+        One polygon per cluster: the convex hull of every currently-installed
+        offshore turbine's coordinates. Built once here (not in the EDA
+        notebook) so the hull-construction logic exists in exactly one place.
+        """
+        return self.processed_data_path / "offshore_regions.geojson"
 
     # ------------------------------------------------------------------ #
     # Helpers                                                              #
@@ -101,6 +182,8 @@ class ProjPaths:
             self.processed_data_path,
             self.images_path,
             self.reports_path,
+            self.mastr_home_path,
+            self.mastr_units_raw_path,
         ]
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)
