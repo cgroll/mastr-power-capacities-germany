@@ -5,6 +5,9 @@
     <loc>http://localhost:3000</loc>
   </url>
   <url>
-    <loc>http://localhost:3000/notebooks/analyse-example</loc>
+    <loc>http://localhost:3000/notebooks/eda</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/notebooks/region-granularity</loc>
   </url>
 </urlset>
