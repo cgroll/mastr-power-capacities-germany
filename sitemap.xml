@@ -10,4 +10,7 @@
   <url>
     <loc>http://localhost:3000/notebooks/region-granularity</loc>
   </url>
+  <url>
+    <loc>http://localhost:3000/notebooks/pecd-zones-eda</loc>
+  </url>
 </urlset>
