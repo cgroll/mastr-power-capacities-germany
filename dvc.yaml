@@ -34,6 +34,27 @@ stages:
       - data/processed/capacity_by_offshore_month.parquet
       - data/processed/offshore_regions.geojson
 
+  download_pecd_masks:
+    cmd: uv run python pipeline/06_download_pecd_masks.py
+    deps:
+      - pipeline/06_download_pecd_masks.py
+    outs:
+      - data/downloads/pecd/peon_region_mask.nc:
+          persist: true
+      - data/downloads/pecd/peof_region_mask.nc:
+          persist: true
+
+  build_wind_zone_panel:
+    cmd: uv run python pipeline/07_build_wind_zone_panel.py
+    deps:
+      - pipeline/07_build_wind_zone_panel.py
+      - data/processed/capacity_events.parquet
+      - data/downloads/pecd/peon_region_mask.nc
+      - data/downloads/pecd/peof_region_mask.nc
+    outs:
+      - data/processed/capacity_by_peon_month.parquet
+      - data/processed/capacity_by_peof_month.parquet
+
   process_eda:
     cmd: >-
       MPLBACKEND=Agg uv run jupytext --to notebook --execute
@@ -74,6 +95,28 @@ stages:
       - output/images/04_pv_category_installation_type.png:
           cache: false
       - output/images/04_offshore_regions_map.png:
+          cache: false
+
+  process_pecd_zones_eda:
+    cmd: >-
+      MPLBACKEND=Agg uv run jupytext --to notebook --execute
+      --set-kernel python3
+      --output book/notebooks/08_pecd_zones_eda.ipynb
+      pipeline/08_pecd_zones_eda.py &&
+      uv run python pipeline/_strip_jupytext_metadata.py
+      book/notebooks/08_pecd_zones_eda.ipynb
+    deps:
+      - pipeline/08_pecd_zones_eda.py
+      - data/downloads/pecd/peon_region_mask.nc
+      - data/downloads/pecd/peof_region_mask.nc
+      - data/downloads/nuts_regions.geojson
+      - data/downloads/country_borders.geojson
+    outs:
+      - book/notebooks/08_pecd_zones_eda.ipynb:
+          cache: false
+      - output/images/08_peon_zone_grid.png:
+          cache: false
+      - output/images/08_peof_zone_grid.png:
           cache: false
 
   process_region_granularity:

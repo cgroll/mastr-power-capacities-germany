@@ -47,8 +47,8 @@ stages:
       nfiles: 6
     - path: pipeline/03_build_capacity_panel.py
       hash: md5
-      md5: 5744df969aca19a654bc41f1e1ce8c65
-      size: 19753
+      md5: 2e7e98a0f4aae6d1078d97069d45dfbf
+      size: 17971
     outs:
     - path: data/processed/capacity_by_nuts2_month.parquet
       hash: md5
@@ -192,3 +192,87 @@ stages:
       hash: md5
       md5: 89a02e177d24a4ce28018e99ca90558a
       size: 422693
+  download_pecd_masks:
+    cmd: uv run python pipeline/06_download_pecd_masks.py
+    deps:
+    - path: pipeline/06_download_pecd_masks.py
+      hash: md5
+      md5: f2ee6e875225a23ac63389013b3775bd
+      size: 2022
+    outs:
+    - path: data/downloads/pecd/peof_region_mask.nc
+      hash: md5
+      md5: 388b1ec71e500c49fba331e02678be8c
+      size: 34665619
+    - path: data/downloads/pecd/peon_region_mask.nc
+      hash: md5
+      md5: 3564693594af076c9fc01fe336b829d3
+      size: 85514663
+  build_wind_zone_panel:
+    cmd: uv run python pipeline/07_build_wind_zone_panel.py
+    deps:
+    - path: data/downloads/pecd/peof_region_mask.nc
+      hash: md5
+      md5: 388b1ec71e500c49fba331e02678be8c
+      size: 34665619
+    - path: data/downloads/pecd/peon_region_mask.nc
+      hash: md5
+      md5: 3564693594af076c9fc01fe336b829d3
+      size: 85514663
+    - path: data/processed/capacity_events.parquet
+      hash: md5
+      md5: 9fc58d08e674dbb80b45d8c10f5ab374
+      size: 147620575
+    - path: pipeline/07_build_wind_zone_panel.py
+      hash: md5
+      md5: b2841f01e485c4631da38e86666ec9f4
+      size: 7459
+    outs:
+    - path: data/processed/capacity_by_peof_month.parquet
+      hash: md5
+      md5: 80e7b4e9fae9fdbb32bea88160373ad2
+      size: 7259
+    - path: data/processed/capacity_by_peon_month.parquet
+      hash: md5
+      md5: 007d9f28994339deb239fc0e2d35a333
+      size: 21238
+  process_pecd_zones_eda:
+    cmd: MPLBACKEND=Agg uv run jupytext --to notebook --execute --set-kernel 
+      python3 --output book/notebooks/08_pecd_zones_eda.ipynb 
+      pipeline/08_pecd_zones_eda.py && uv run python 
+      pipeline/_strip_jupytext_metadata.py 
+      book/notebooks/08_pecd_zones_eda.ipynb
+    deps:
+    - path: data/downloads/country_borders.geojson
+      hash: md5
+      md5: dd213118020e9d2604bf9f29b540bfa5
+      size: 1758506
+    - path: data/downloads/nuts_regions.geojson
+      hash: md5
+      md5: deef50e6af7cf70882303055901eae9c
+      size: 7149154
+    - path: data/downloads/pecd/peof_region_mask.nc
+      hash: md5
+      md5: 388b1ec71e500c49fba331e02678be8c
+      size: 34665619
+    - path: data/downloads/pecd/peon_region_mask.nc
+      hash: md5
+      md5: 3564693594af076c9fc01fe336b829d3
+      size: 85514663
+    - path: pipeline/08_pecd_zones_eda.py
+      hash: md5
+      md5: 36c00070faf782b44400965ca9f11eec
+      size: 7790
+    outs:
+    - path: book/notebooks/08_pecd_zones_eda.ipynb
+      hash: md5
+      md5: 3d048f6c01e08be58dce37a2f0b2cb76
+      size: 12097
+    - path: output/images/08_peof_zone_grid.png
+      hash: md5
+      md5: 3f2fcb0b5a201e2d5b1cda63f23f1a65
+      size: 188957
+    - path: output/images/08_peon_zone_grid.png
+      hash: md5
+      md5: d4869f1e87696227ba69d5cc5fa1cf98
+      size: 511487

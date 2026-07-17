@@ -16,6 +16,7 @@ project:
       children:
         - file: notebooks/04_eda.ipynb
         - file: notebooks/05_region_granularity.ipynb
+        - file: notebooks/08_pecd_zones_eda.ipynb
 site:
   options:
     folders: true

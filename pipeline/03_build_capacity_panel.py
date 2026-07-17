@@ -91,6 +91,7 @@ import geopandas as gpd
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+from mpg.panels import monthly_snapshot_panel
 from mpg.paths import ProjPaths
 from shapely.geometry import MultiPoint
 
@@ -117,54 +118,6 @@ EVENT_COLUMNS = [
 ]
 
 EXPORT_START_PERIOD = pd.Period("2015-01", freq="M")
-
-
-def monthly_snapshot_panel(df: pd.DataFrame, group_cols: list[str], month_range: pd.PeriodIndex) -> pd.DataFrame:
-    """Installed capacity_mw + unit_count per group, for every month in `month_range`.
-
-    Vectorized cumulative-delta approach — see module docstring ("Monthly
-    export") for why this replaces a naive per-month filter+groupby loop.
-    """
-    start_period = df["commissioning_date"].dt.to_period("M")
-    end_period = df["final_shutdown_date"].dt.to_period("M")
-    has_end = end_period.notna()
-
-    adds = df[group_cols].copy()
-    adds["period"] = start_period
-    adds["capacity_delta"] = df["capacity_mw"]
-    adds["count_delta"] = 1
-
-    removes = df.loc[has_end, group_cols].copy()
-    removes["period"] = end_period[has_end]
-    removes["capacity_delta"] = -df.loc[has_end, "capacity_mw"]
-    removes["count_delta"] = -1
-
-    net = (
-        pd.concat([adds, removes], ignore_index=True)
-        .groupby(group_cols + ["period"])[["capacity_delta", "count_delta"]]
-        .sum()
-    )
-
-    # `unstack` leaves NaN for (group, period) combos with no net change in a
-    # period where the group has *some* column already (as opposed to a period
-    # missing entirely, which `reindex`'s fill_value handles) — fillna(0)
-    # covers both before the cumulative sum.
-    capacity = (
-        net["capacity_delta"].unstack("period").reindex(columns=month_range, fill_value=0.0)
-        .fillna(0.0).cumsum(axis=1)
-    )
-    unit_count = (
-        net["count_delta"].unstack("period").reindex(columns=month_range, fill_value=0)
-        .fillna(0).cumsum(axis=1)
-    )
-
-    panel = pd.concat(
-        [capacity.stack().rename("capacity_mw"), unit_count.stack().rename("unit_count")], axis=1
-    ).reset_index()
-    panel = panel.rename(columns={"period": "month"})
-    panel = panel[panel["month"] >= EXPORT_START_PERIOD].copy()
-    panel["month"] = panel["month"].dt.to_timestamp() + pd.offsets.MonthEnd(0)
-    return panel.reset_index(drop=True)
 
 
 def aggregate_to_nuts2(monthly: pd.DataFrame) -> pd.DataFrame:
@@ -332,19 +285,21 @@ for f in tech_files:
 
     # ── Monthly export panels (solar/storage/wind only) — see module docstring ─
     if f.stem == "solar":
-        monthly = monthly_snapshot_panel(events, ["region_code", "pv_category"], MONTH_RANGE)
+        monthly = monthly_snapshot_panel(
+            events, ["region_code", "pv_category"], MONTH_RANGE, export_start_period=EXPORT_START_PERIOD
+        )
         monthly["series"] = "solar_" + monthly["pv_category"].astype(str)
         solar_monthly = monthly.drop(columns=["pv_category"])
         partial_region_month_panels.append(solar_monthly)
         partial_nuts2_month_panels.append(aggregate_to_nuts2(solar_monthly))
 
     elif f.stem == "storage":
-        monthly = monthly_snapshot_panel(events, ["region_code"], MONTH_RANGE)
+        monthly = monthly_snapshot_panel(events, ["region_code"], MONTH_RANGE, export_start_period=EXPORT_START_PERIOD)
         monthly["series"] = "storage"
         partial_region_month_panels.append(monthly)
 
     elif f.stem == "wind":
-        monthly = monthly_snapshot_panel(events, ["region_code"], MONTH_RANGE)
+        monthly = monthly_snapshot_panel(events, ["region_code"], MONTH_RANGE, export_start_period=EXPORT_START_PERIOD)
         is_offshore_row = monthly["region_code"].str.startswith("DEZZ")
         onshore_monthly = monthly[~is_offshore_row].copy()
         onshore_monthly["series"] = "wind_onshore"

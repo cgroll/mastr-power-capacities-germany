@@ -121,6 +121,35 @@ class ProjPaths:
         return self.downloads_path / "country_borders.geojson"
 
     # ------------------------------------------------------------------ #
+    # PECD wind zone mask files                                            #
+    # ------------------------------------------------------------------ #
+
+    @property
+    def pecd_masks_path(self) -> Path:
+        """Directory for PECD v4.2 region mask NetCDF files."""
+        return self.downloads_path / "pecd"
+
+    @property
+    def peon_mask_file(self) -> Path:
+        """PECD v4.2 PEON (pan-European onshore wind zone) region mask.
+
+        Fractional (0-1) area coverage of each 0.25-degree grid cell by every
+        European PEON zone; Germany intersects 7 (`DE01`..`DE07`). See
+        `~/research/delu-headline-forecast/docs/data_sources.md` for background
+        and `pipeline/06_download_pecd_masks.py`.
+        """
+        return self.pecd_masks_path / "peon_region_mask.nc"
+
+    @property
+    def peof_mask_file(self) -> Path:
+        """PECD v4.2 PEOF (pan-European offshore wind zone) region mask.
+
+        Same structure as `peon_mask_file`; Germany intersects 6 zones
+        (`DE011_OFF`..`DE015_OFF`, `DE02_OFF`).
+        """
+        return self.pecd_masks_path / "peof_region_mask.nc"
+
+    # ------------------------------------------------------------------ #
     # Processed data files                                                 #
     # ------------------------------------------------------------------ #
 
@@ -166,6 +195,29 @@ class ProjPaths:
         return self.processed_data_path / "capacity_by_nuts2_month.parquet"
 
     @property
+    def capacity_by_peon_month_file(self) -> Path:
+        """Monthly (end-of-month) onshore wind export, by PEON zone x month, from 2015 on.
+
+        Same shape as `capacity_by_region_month_file`'s `wind_onshore` slice,
+        but keyed by PEON zone (`DE01`..`DE07`) instead of NUTS3 region. Each
+        wind unit's capacity is fractionally split across every PEON zone
+        with nonzero coverage at the unit's grid cell, instead of being
+        assigned to one region — so `unit_count` here is a fractional sum,
+        not an integer count. See `pipeline/07_build_wind_zone_panel.py`.
+        """
+        return self.processed_data_path / "capacity_by_peon_month.parquet"
+
+    @property
+    def capacity_by_peof_month_file(self) -> Path:
+        """Monthly (end-of-month) offshore wind export, by PEOF zone x month, from 2015 on.
+
+        Same idea as `capacity_by_peon_month_file`, for offshore wind, keyed
+        by PEOF zone (`DE011_OFF`..`DE015_OFF`, `DE02_OFF`) instead of MaStR's
+        two North Sea/Baltic Sea pseudo-regions.
+        """
+        return self.processed_data_path / "capacity_by_peof_month.parquet"
+
+    @property
     def capacity_by_offshore_month_file(self) -> Path:
         """Monthly (end-of-month) export for offshore wind, by the two offshore
         pseudo-regions (DEZZ-NORDSEE / DEZZ-OSTSEE) x month, from 2015 on.
@@ -195,6 +247,7 @@ class ProjPaths:
             self.reports_path,
             self.mastr_home_path,
             self.mastr_units_raw_path,
+            self.pecd_masks_path,
         ]
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)
