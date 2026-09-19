@@ -34,6 +34,7 @@ contribution pre-split across its candidate zones before the cumulative sum:
 import numpy as np
 import pandas as pd
 import xarray as xr
+from mpg.grid import nearest_grid_index
 from mpg.panels import monthly_snapshot_panel
 from mpg.paths import ProjPaths
 
@@ -41,13 +42,6 @@ paths = ProjPaths()
 paths.ensure_directories()
 
 EXPORT_START_PERIOD = pd.Period("2015-01", freq="M")
-
-
-def nearest_grid_index(values: np.ndarray, grid: np.ndarray) -> np.ndarray:
-    """Index of the nearest point in a regularly-spaced 1-D `grid` for each of `values`."""
-    step = grid[1] - grid[0]
-    idx = np.rint((values - grid[0]) / step).astype(int)
-    return np.clip(idx, 0, len(grid) - 1)
 
 
 def zone_centroids(mask_values: np.ndarray, lats: np.ndarray, lons: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

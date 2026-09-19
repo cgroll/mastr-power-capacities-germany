@@ -6,6 +6,13 @@ stages:
     outs:
       - data/downloads/mastr_units_raw:
           persist: true
+      # Separate directory from mastr_units_raw on purpose: keeps
+      # build_capacity_panel's dependency on mastr_units_raw (one file per
+      # technology) from spuriously going stale whenever a technical-detail
+      # file changes, and keeps pipeline/03's glob over that directory from
+      # ever seeing a file it doesn't know how to handle.
+      - data/downloads/mastr_technical_detail:
+          persist: true
 
   download_nuts:
     cmd: uv run python pipeline/02_download_nuts.py
@@ -48,12 +55,38 @@ stages:
     cmd: uv run python pipeline/07_build_wind_zone_panel.py
     deps:
       - pipeline/07_build_wind_zone_panel.py
+      - mpg/grid.py
       - data/processed/capacity_events.parquet
       - data/downloads/pecd/peon_region_mask.nc
       - data/downloads/pecd/peof_region_mask.nc
     outs:
       - data/processed/capacity_by_peon_month.parquet
       - data/processed/capacity_by_peof_month.parquet
+
+  build_wind_grid_cell_panel:
+    cmd: uv run python pipeline/09_build_wind_grid_cell_panel.py
+    deps:
+      - pipeline/09_build_wind_grid_cell_panel.py
+      - mpg/grid.py
+      - mpg/panels.py
+      - data/processed/capacity_events.parquet
+      - data/downloads/pecd/peon_region_mask.nc
+    outs:
+      - data/processed/capacity_by_wind_onshore_grid_month.parquet
+      - data/processed/capacity_by_wind_offshore_grid_month.parquet
+
+  export_wind_solar_units:
+    cmd: uv run python pipeline/10_export_wind_solar_units.py
+    deps:
+      - pipeline/10_export_wind_solar_units.py
+      - data/processed/capacity_events.parquet
+      - data/downloads/mastr_technical_detail/solar_technical_detail.parquet
+      - data/downloads/pecd/peon_region_mask.nc
+      - data/downloads/pecd/peof_region_mask.nc
+    outs:
+      - data/processed/mastr_units_wind_solar.parquet
+      - data/processed/pecd_region_mask_peon.parquet
+      - data/processed/pecd_region_mask_peof.parquet
 
   process_eda:
     cmd: >-

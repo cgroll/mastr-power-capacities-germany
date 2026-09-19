@@ -12,6 +12,7 @@ project:
   github: cgroll/mastr-power-capacities-germany
   toc:
     - file: markdown/index.md
+    - file: markdown/wind_solar_export.md
     - title: Analysis
       children:
         - file: notebooks/04_eda.ipynb

@@ -5,9 +5,14 @@ stages:
     deps:
     - path: pipeline/01_download_mastr.py
       hash: md5
-      md5: 42f6432ab84a1a6c8dd8abcb8aefbc96
-      size: 8697
+      md5: 0caf47fe6ebb9eb0f948645039f64f64
+      size: 11210
     outs:
+    - path: data/downloads/mastr_technical_detail
+      hash: md5
+      md5: 9033658e403fe9bd587a88df77c7b4bc.dir
+      size: 75627256
+      nfiles: 2
     - path: data/downloads/mastr_units_raw
       hash: md5
       md5: 725f3d3f7429b80893b827f127ecd0ab.dir
@@ -223,10 +228,14 @@ stages:
       hash: md5
       md5: 9fc58d08e674dbb80b45d8c10f5ab374
       size: 147620575
+    - path: mpg/grid.py
+      hash: md5
+      md5: bb0c2382f93beaf9a5e7188e25f3e39f
+      size: 629
     - path: pipeline/07_build_wind_zone_panel.py
       hash: md5
-      md5: b2841f01e485c4631da38e86666ec9f4
-      size: 7459
+      md5: 5a5bc0c58e9819216a5d6fd0849a9f41
+      size: 7201
     outs:
     - path: data/processed/capacity_by_peof_month.parquet
       hash: md5
@@ -276,3 +285,71 @@ stages:
       hash: md5
       md5: d4869f1e87696227ba69d5cc5fa1cf98
       size: 511487
+  build_wind_grid_cell_panel:
+    cmd: uv run python pipeline/09_build_wind_grid_cell_panel.py
+    deps:
+    - path: data/downloads/pecd/peon_region_mask.nc
+      hash: md5
+      md5: 3564693594af076c9fc01fe336b829d3
+      size: 85514663
+    - path: data/processed/capacity_events.parquet
+      hash: md5
+      md5: 9fc58d08e674dbb80b45d8c10f5ab374
+      size: 147620575
+    - path: mpg/grid.py
+      hash: md5
+      md5: bb0c2382f93beaf9a5e7188e25f3e39f
+      size: 629
+    - path: mpg/panels.py
+      hash: md5
+      md5: 0cd07fafc9599f1c2bad3c80ba676789
+      size: 3160
+    - path: pipeline/09_build_wind_grid_cell_panel.py
+      hash: md5
+      md5: 4e21a99cd08cef62ff696227def14cfe
+      size: 4661
+    outs:
+    - path: data/processed/capacity_by_wind_offshore_grid_month.parquet
+      hash: md5
+      md5: b6f3df43f937ca10fcadaed4df1a5426
+      size: 8232
+    - path: data/processed/capacity_by_wind_onshore_grid_month.parquet
+      hash: md5
+      md5: 5ad4c97b26585883c41c74c402aa2808
+      size: 90910
+  export_wind_solar_units:
+    cmd: uv run python pipeline/10_export_wind_solar_units.py
+    deps:
+    - path: data/downloads/mastr_technical_detail/solar_technical_detail.parquet
+      hash: md5
+      md5: a384f1532795dc6a7506fa61f58101fe
+      size: 74841434
+    - path: data/downloads/pecd/peof_region_mask.nc
+      hash: md5
+      md5: 388b1ec71e500c49fba331e02678be8c
+      size: 34665619
+    - path: data/downloads/pecd/peon_region_mask.nc
+      hash: md5
+      md5: 3564693594af076c9fc01fe336b829d3
+      size: 85514663
+    - path: data/processed/capacity_events.parquet
+      hash: md5
+      md5: 9fc58d08e674dbb80b45d8c10f5ab374
+      size: 147620575
+    - path: pipeline/10_export_wind_solar_units.py
+      hash: md5
+      md5: 7a43de9bbfc54930fdead49c0da39d05
+      size: 5358
+    outs:
+    - path: data/processed/mastr_units_wind_solar.parquet
+      hash: md5
+      md5: 82bb89a20f067a312f23ac2c8829cde1
+      size: 36397241
+    - path: data/processed/pecd_region_mask_peof.parquet
+      hash: md5
+      md5: 7d1b23dac7ebd49e74070bd6aaa909a7
+      size: 4641
+    - path: data/processed/pecd_region_mask_peon.parquet
+      hash: md5
+      md5: c364ffb40e983990af73b3105bc484e9
+      size: 7024

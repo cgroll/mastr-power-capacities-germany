@@ -97,6 +97,35 @@ class ProjPaths:
         """
         return self.downloads_path / "mastr_units_raw"
 
+    @property
+    def mastr_technical_detail_path(self) -> Path:
+        """Per-unit technical-detail files -- deliberately a *separate*
+        directory from `mastr_units_raw_path`, not a subfolder of it.
+
+        `pipeline/03_build_capacity_panel.py` globs `mastr_units_raw_path`
+        for "one parquet file per technology"; technical-detail files are a
+        different kind of file (additive columns, not a technology table)
+        and must not live where that glob can find them (found the hard way
+        2026-09-19: it crashed trying to read `commissioning_date` out of
+        `solar_technical_detail.parquet`, and — since a DVC stage rerun
+        deletes its declared outputs before regenerating them — very nearly
+        turned into deleted output files, recovered from the local DVC
+        cache but not by design).
+        """
+        return self.downloads_path / "mastr_technical_detail"
+
+    def mastr_technical_detail_file(self, technology: str) -> Path:
+        """Per-unit technical detail, additive to `mastr_units_raw_path`'s per-technology files.
+
+        Only defined for "wind" (manufacturer, turbine_model, hub_height_m,
+        rotor_diameter_m) and "solar" (main_orientation,
+        main_orientation_tilt_bucket) — the two technologies
+        ~/research/pecd-replication needs plant-level detail for (power-curve
+        matching and POA transposition respectively). See
+        `pipeline/01_download_mastr.py`.
+        """
+        return self.mastr_technical_detail_path / f"{technology}_technical_detail.parquet"
+
     # ------------------------------------------------------------------ #
     # NUTS region data files                                               #
     # ------------------------------------------------------------------ #
@@ -218,6 +247,31 @@ class ProjPaths:
         return self.processed_data_path / "capacity_by_peof_month.parquet"
 
     @property
+    def capacity_by_wind_onshore_grid_month_file(self) -> Path:
+        """Monthly (end-of-month) onshore wind export, by 0.25-degree grid cell x month, from 2015 on.
+
+        Each unit is assigned to a single nearest grid cell (`mpg.grid.nearest_grid_index`,
+        same 0.25 degree PECD/ERA5 grid as `peon_mask_file`) rather than
+        fractionally split across zones (contrast `capacity_by_peon_month_file`)
+        — grid cells don't straddle each other the way they can straddle a
+        zone boundary, so there's no fractional-weight step here. Columns:
+        `grid_lat`, `grid_lon`, `month`, `series` ("wind_onshore"),
+        `capacity_mw`, `unit_count`. See
+        `pipeline/09_build_wind_grid_cell_panel.py`.
+        """
+        return self.processed_data_path / "capacity_by_wind_onshore_grid_month.parquet"
+
+    @property
+    def capacity_by_wind_offshore_grid_month_file(self) -> Path:
+        """Monthly (end-of-month) offshore wind export, by 0.25-degree grid cell x month.
+
+        Same construction as `capacity_by_wind_onshore_grid_month_file`, for
+        offshore wind units (identified the same way as
+        `capacity_by_offshore_month_file`: `region_code` starting with `DEZZ`).
+        """
+        return self.processed_data_path / "capacity_by_wind_offshore_grid_month.parquet"
+
+    @property
     def capacity_by_offshore_month_file(self) -> Path:
         """Monthly (end-of-month) export for offshore wind, by the two offshore
         pseudo-regions (DEZZ-NORDSEE / DEZZ-OSTSEE) x month, from 2015 on.
@@ -235,6 +289,39 @@ class ProjPaths:
         return self.processed_data_path / "offshore_regions.geojson"
 
     # ------------------------------------------------------------------ #
+    # General-purpose export: raw(ish) wind + solar units, for consumers   #
+    # that want to do their own region/technology/time-slicing rather      #
+    # than consume an already-aggregated panel (see pipeline/10)           #
+    # ------------------------------------------------------------------ #
+
+    @property
+    def mastr_units_wind_solar_file(self) -> Path:
+        """Per-unit wind + solar capacity records, filtered from `capacity_events_file`.
+
+        Built by `pipeline/10_export_wind_solar_units.py`. Deliberately not
+        region-assigned to a PEON/PEOF/NUTS2 zone beyond MaStR's own
+        `region_code`, not classified into PECD's 4 solar technology codes,
+        and not aggregated by month — this is the raw(ish) input to those
+        steps, not their result. See `book/markdown/wind_solar_export.md`
+        for the full column reference and how to use it.
+        """
+        return self.processed_data_path / "mastr_units_wind_solar.parquet"
+
+    @property
+    def pecd_region_mask_peon_export_file(self) -> Path:
+        """PEON region mask, cropped to Germany's own zones and nonzero-weight
+        cells only -- a long-format (zone_id, latitude, longitude, weight)
+        lookup table, not the full-Europe raster `peon_mask_file` is. Built
+        by `pipeline/10_export_wind_solar_units.py`.
+        """
+        return self.processed_data_path / "pecd_region_mask_peon.parquet"
+
+    @property
+    def pecd_region_mask_peof_export_file(self) -> Path:
+        """Same as `pecd_region_mask_peon_export_file`, for PEOF zones."""
+        return self.processed_data_path / "pecd_region_mask_peof.parquet"
+
+    # ------------------------------------------------------------------ #
     # Helpers                                                              #
     # ------------------------------------------------------------------ #
 
@@ -247,6 +334,7 @@ class ProjPaths:
             self.reports_path,
             self.mastr_home_path,
             self.mastr_units_raw_path,
+            self.mastr_technical_detail_path,
             self.pecd_masks_path,
         ]
         for d in dirs:
