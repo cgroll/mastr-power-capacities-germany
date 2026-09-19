@@ -5,6 +5,9 @@
     <loc>http://localhost:3000</loc>
   </url>
   <url>
+    <loc>http://localhost:3000/markdown/wind-solar-export</loc>
+  </url>
+  <url>
     <loc>http://localhost:3000/notebooks/eda</loc>
   </url>
   <url>
