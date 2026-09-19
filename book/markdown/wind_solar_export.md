@@ -41,6 +41,16 @@ export is deliberately upstream of all of those.
 
 # How region assignment actually works (done upstream, in `pipeline/03`)
 
+Solar and wind end up at different PECD resolutions via two **independent**
+joins on the same raw unit data — the NUTS3 code assigned below never feeds
+into the PEON/PEOF assignment, and vice versa:
+
+| Technology | MaStR raw location | PECD resolution | Crosswalk |
+|---|---|---|---|
+| Solar | `municipality_key` → NUTS3 | NUTS2 | `region_code.str[:4]` — NUTS3 and NUTS2 are the same Eurostat hierarchy, so this is an exact, deterministic prefix relationship. |
+| Wind onshore | `municipality_key` → NUTS3 | PEON zone (`DE01`-`DE07`) | `(longitude, latitude)` → nearest 0.25° grid cell → that cell's PEON weights from the region mask. PEON is *not* part of the NUTS hierarchy, so there's no code-based shortcut — done from scratch via the raster. |
+| Wind offshore | `sea_location` → `DEZZ-NORDSEE`/`DEZZ-OSTSEE` | PEOF zone (`DE011_OFF`-`DE02_OFF`) | Same raster lookup as onshore, against the PEOF mask instead. |
+
 Every MaStR unit is registered with a *Gemeindeschlüssel* (the official
 German municipality key, "AGS") — not a postal code, which doesn't align
 with administrative boundaries. For onshore units, that key is matched
